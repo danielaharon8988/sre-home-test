@@ -1,19 +1,20 @@
-SRE Home Test Project
+SRE Home Assignment
 
 Overview
 
-This project demonstrates a complete application stack including:
+This project demonstrates a complete end-to-end system that combines application development, containerization, database management, event streaming, and change data capture (CDC).
 
-* Frontend (HTML)
-* Backend (Node.js + Express)
-* MySQL Database
-* User Authentication
-* Token Management
-* Logging with log4js
-* Kafka
-* Debezium CDC (Change Data Capture)
+The solution includes:
+
+* Frontend login application
+* Node.js backend API
+* MySQL database
+* Authentication and token management
+* Structured logging using log4js
+* Apache Kafka
+* Debezium CDC integration
 * Kafka Consumer
-* Docker Compose
+* Docker Compose orchestration
 
 ⸻
 
@@ -22,13 +23,13 @@ Architecture
 Frontend
     |
     v
-Node.js Backend
+Backend (Node.js / Express)
     |
     v
 MySQL
     |
     v
-Debezium
+Debezium CDC
     |
     v
 Kafka
@@ -42,22 +43,21 @@ Components
 
 Frontend
 
-Simple login page.
+A simple login interface that allows users to authenticate against the backend service.
 
 Features:
 
-* Username field
-* Password field
-* Login button
-* Sends authentication requests to backend
+* Username/password login
+* REST API integration
+* Authentication response display
 
 ⸻
 
 Backend
 
-Node.js + Express API.
+Built with Node.js and Express.
 
-Endpoints:
+Implemented endpoints:
 
 GET /health
 
@@ -65,22 +65,19 @@ Health check endpoint.
 
 GET /users
 
-Returns users from database.
+Returns all users from the database.
 
 POST /login
 
-Authenticates a user.
+Authenticates a user and generates a unique token.
 
-Returns:
-
-* Login status
-* Generated token
+Successful login actions are logged using log4js.
 
 ⸻
 
 Database
 
-MySQL database.
+MySQL 8.0 database running in Docker.
 
 Tables:
 
@@ -101,109 +98,114 @@ password: admin
 
 Logging
 
-Implemented using log4js.
+Structured application logging is implemented using log4js.
 
-Every successful login generates a structured log:
+Each successful login generates a log event containing:
 
-{
-  "timestamp": "...",
-  "userId": 1,
-  "action": "login",
-  "ip": "::1"
-}
+* Timestamp
+* User ID
+* Action
+* Source IP
 
 ⸻
 
 Kafka
 
-Kafka is used as the message broker.
+Kafka is used as the central event streaming platform.
 
-Database change events are published to Kafka topics.
-
-Example topic:
-
-mysql.appdb.users
+Application events and CDC events are published to Kafka topics.
 
 ⸻
 
 Debezium
 
-Debezium monitors MySQL binary logs.
+Debezium monitors MySQL binary logs and captures database changes.
 
-Every INSERT, UPDATE or DELETE operation is captured and sent to Kafka.
+Supported operations:
+
+* INSERT
+* UPDATE
+* DELETE
+
+Captured events are automatically published into Kafka topics.
 
 ⸻
 
 Consumer
 
-Node.js Kafka consumer.
+Kafka consumer implemented using KafkaJS.
 
 Responsibilities:
 
-* Subscribe to Kafka topic
-* Receive CDC events
-* Print messages to console
+* Subscribe to Kafka topics
+* Consume CDC events
+* Display incoming messages
 
 ⸻
 
 Running the Project
 
-Start all services:
+Start Infrastructure
 
 docker compose up -d
 
-Create Debezium connector:
+Create Debezium Connector
 
 ./create-connector.sh
 
-Run consumer:
+Run Consumer
 
 cd consumer
 node consumer.js
 
 ⸻
 
-Testing Login
+Verification
 
-Open:
+Verify Backend
 
-http://localhost:8080
+curl http://localhost:3000/health
 
-Use:
+Verify Users Endpoint
 
-username: admin
-password: admin
+curl http://localhost:3000/users
 
-Expected result:
+Verify Login
 
-* Login succeeds
-* Token is returned
-* Login event is logged
+curl -X POST http://localhost:3000/login \
+-H "Content-Type: application/json" \
+-d '{"username":"admin","password":"admin"}'
 
-⸻
+Verify CDC Flow
 
-Testing CDC
+Insert a new user:
 
-Insert a user:
+docker exec -it mysql mysql -uroot -proot -e \
+"USE appdb; INSERT INTO users(username,password) VALUES ('cdc_test','1234');"
 
-docker exec -it mysql mysql -uroot -proot -e "USE appdb; INSERT INTO users(username,password) VALUES ('testuser','1234');"
+The change will be captured by:
 
-Expected result:
-
-* Debezium captures the change
-* Kafka receives the event
-* Consumer prints the event
+MySQL
+→ Debezium
+→ Kafka
+→ Consumer
 
 ⸻
 
 Technologies Used
 
 * Node.js
-* Express.js
+* Express
 * MySQL 8.0
 * Kafka
 * Debezium
+* KafkaJS
 * Docker
 * Docker Compose
 * log4js
-* KafkaJS
+
+⸻
+
+Author
+
+Daniel Aharon
